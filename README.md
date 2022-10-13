@@ -14,7 +14,7 @@ i decided to upgrade the official keyauth library to the latest api (1.2) just c
 - [x] checkblacklist
 - [ ] chatget
 - [ ] chatsend
-- [ ] log
+- [x] log
 - [x] webhook
 - [ ] ban
 - [x] file (download)

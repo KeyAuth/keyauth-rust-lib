@@ -1,9 +1,22 @@
+/*!
+unofficial [keyauth](https://keyauth.cc) library that uses 1.2 api version
+
+basic usage:
+```rust
+let mut auth = keyauth::KeyauthApi::new("application name", "ownerid", "application secret", "application version", "api url"); // if you dont have a custom domain for api use "https://keyauth.win/api/1.2/"
+auth.init().unwrap();
+auth.login("username", "password", Some("hwid".to_string()).unwrap(); // if you want to automaticly generate hwid use None insted.
+```
+
+*/
+
 use uuid::Uuid;
 use std::collections::HashMap;
 use reqwest::blocking::Client;
 use hmac_sha256::HMAC;
 use base16::decode;
 
+/// every function in this struct (accept log) returns a Result and Err("Request was tampered with") will be returned if the request signature doesnt mathc the sha256 hmac of the message
 pub struct KeyauthApi {
     name: String,
     owner_id: String,
@@ -31,6 +44,7 @@ pub struct KeyauthApi {
 }
 
 impl KeyauthApi {
+    /// creats a new KeyauthApi and its defaults, api_url has to be api version 1.2 example: "https://keyauth.win/api/1.2/" or if you have a custom api domain: "api.example.com/1.2/"
     pub fn new(name: &str, owner_id: &str, secret: &str, version: &str, api_url: &str) -> Self {
         Self {
             name: name.to_string(),
@@ -59,6 +73,7 @@ impl KeyauthApi {
         }
     }
 
+    /// initializes a session, **required to run before any other function in this struct!!!**
     pub fn init(&mut self) -> Result<(), String> {
         self.enckey = Uuid::new_v4().simple().to_string();
         self.enckey_s = format!("{}-{}", self.enckey, self.secret);
@@ -102,6 +117,7 @@ impl KeyauthApi {
         }
     }
 
+    /// registeres a new user
     pub fn register(&mut self, username: String, password: String, license: String, hwid: Option<String>) -> Result<(), String> {
         let hwidd = match hwid {
             Some(hwid) => hwid,
@@ -141,6 +157,7 @@ impl KeyauthApi {
         }
     }
 
+    /// upgrades a user license level or extends a license
     pub fn upgrade(&mut self, username: String, license: String) -> Result<(), String> {
         let mut req_data = HashMap::new();
         req_data.insert("type", "upgrade");
@@ -169,6 +186,7 @@ impl KeyauthApi {
         }
     }
 
+    /// login self explanatory
     pub fn login(&mut self, username: String, password: String, hwid: Option<String>) -> Result<(), String> {
         let hwidd = match hwid {
             Some(hwid) => hwid,
@@ -210,6 +228,7 @@ impl KeyauthApi {
         }
     }
 
+    /// https://docs.keyauth.cc/api/license
     pub fn license(&mut self, license: String, hwid: Option<String>) -> Result<(), String> {
         let hwidd = match hwid {
             Some(hwid) => hwid,
@@ -250,6 +269,7 @@ impl KeyauthApi {
         }
     }
 
+    /// this will get a global variable (not user) and return it
     pub fn var(&mut self, varid: String) -> Result<String, String> {
         let mut req_data = HashMap::new();
         req_data.insert("type", "var");
@@ -278,6 +298,7 @@ impl KeyauthApi {
         }
     }
 
+    /// downloads a file, and decodes using base16::decode
     pub fn file(&mut self, fileid: String) -> Result<Vec<u8>, String> {
         let mut req_data = HashMap::new();
         req_data.insert("type", "file");
@@ -306,6 +327,7 @@ impl KeyauthApi {
         }
     }
 
+    /// sends a webhook from keyauth's servers so the url isnt exposed
     pub fn webhook(&mut self, webid: String, params: String) -> Result<String, String> {
         let mut req_data = HashMap::new();
         req_data.insert("type", "webhook");
@@ -335,6 +357,7 @@ impl KeyauthApi {
         }
     }
 
+    /// checks if the user is blacklisted and sets self.blacklisted acordingly
     pub fn checkblacklist(&mut self) -> Result<(), String> {
         let mut req_data = HashMap::new();
         req_data.insert("type", "checkblacklist");
@@ -364,6 +387,7 @@ impl KeyauthApi {
         }
     }
 
+    /// sets a user variable to varvalue
     pub fn setvar(&mut self, varname: String, varvalue: String) -> Result<(), String> {
         let mut req_data = HashMap::new();
         req_data.insert("type", "setvar");
@@ -391,6 +415,7 @@ impl KeyauthApi {
         Ok(())
     }
 
+    /// gets a user variable
     pub fn getvar(&mut self, varname: String) -> Result<String, String> {
         let mut req_data = HashMap::new();
         req_data.insert("type", "getvar");
@@ -419,6 +444,7 @@ impl KeyauthApi {
         }
     }
 
+    /// logs somethink to keyauth
     pub fn log(&mut self, message: String, pcuser: Option<String>) {
         let usr = match pcuser {
             Some(pcuser) => pcuser,
