@@ -39,8 +39,8 @@ impl KeyauthApi {
             enckey: String::new(),
             enckey_s: String::new(),
             session_id: String::new(),
-            api_url: api_url.to_string(),
             num_keys: String::new(),
+            api_url: api_url.to_string(),
             num_online_users: String::new(),
             num_users: String::new(),
             app_version: version.to_string(),
@@ -75,7 +75,7 @@ impl KeyauthApi {
         if resp == "KeyAuth_Invalid" {
             return Err("The application doesn't exist".to_string());
         }
-        if head.contains_key("signature") == false {
+        if !head.contains_key("signature") {
             return Err("Request was tampered with".to_string());
         }
         let sig = head.get("signature").unwrap().to_str().unwrap();
@@ -116,6 +116,24 @@ impl KeyauthApi {
         let head = req.headers().clone();
         let resp = req.text().unwrap();
 
+        if !head.contains_key("signature") {
+            return Err("Request was tampered with".to_string());
+        }
+        let sig = head.get("signature").unwrap().to_str().unwrap();
+        if sig != Self::make_hmac(&resp, &self.secret) {
+            return Err("Request was tampered with".to_string());
+        }
+        let json_rep: serde_json::Value = serde_json::from_str(&resp).unwrap();
+        if json_rep["success"].as_bool().unwrap() {
+            self.username = username;
+            self.ip = json_rep["info"]["ip"].as_str().unwrap().to_string();
+            self.create_date = json_rep["info"]["createdate"].as_str().unwrap().to_string();
+            self.last_login = json_rep["info"]["lastlogin"].as_str().unwrap().to_string();
+            self.subscription = json_rep["info"]["subscriptions"][0]["subscription"].as_str().unwrap().to_string();
+            Ok(())
+        } else {
+            Err(json_rep["message"].as_str().unwrap().to_string())
+        }
     }
 
     fn request(req_data: HashMap<&str, &str>, url: &str) -> reqwest::blocking::Response {

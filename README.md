@@ -3,7 +3,7 @@ i decided to upgrade the official keyauth library to the latest api (1.2) just c
 
 # TODO
 - [x] init
-- [ ] register
+- [x] register
 - [ ] upgrade
 - [ ] login
 - [ ] license
