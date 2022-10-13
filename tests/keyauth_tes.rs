@@ -36,4 +36,13 @@ fn all() {
 //        println!("{}", res.err().unwrap());
 //        assert!(false);
 //    }
+
+    //license
+//    res = auth.license("OTFAZ2-BRBV9Q-LFT8LK-173YMN-YRWNUM-79VUF9".to_string(), None);
+//    if res.is_ok() {
+//        assert!(true);
+//    } else {
+//        println!("{}", res.err().unwrap());
+//        assert!(false);
+//    }
 }

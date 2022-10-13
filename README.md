@@ -6,7 +6,7 @@ i decided to upgrade the official keyauth library to the latest api (1.2) just c
 - [x] register
 - [x] upgrade
 - [x] login
-- [ ] license
+- [x] license
 - [ ] fetchOnline
 - [ ] setvar (user)
 - [ ] getvar (user)
