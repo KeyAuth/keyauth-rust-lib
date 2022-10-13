@@ -101,7 +101,11 @@ impl KeyauthApi {
         }
     }
 
-    pub fn register(&mut self, username: String, password: String, license: String) -> Result<(), String> {
+    pub fn register(&mut self, username: String, password: String, license: String, hwid: Option<String>) -> Result<(), String> {
+        let hwidd = match hwid {
+            Some(hwid) => hwid,
+            None => machine_uuid::get(),
+        };
         let mut req_data = HashMap::new();
         req_data.insert("type", "register");
         req_data.insert("username", &username);
@@ -110,7 +114,7 @@ impl KeyauthApi {
         req_data.insert("sessionid", &self.session_id);
         req_data.insert("name", &self.name);
         req_data.insert("ownerid", &self.owner_id);
-        req_data.insert("hwid", &self.hwid);
+        req_data.insert("hwid", &hwidd);
 
         let req = Self::request(req_data, &self.api_url);
         let head = req.headers().clone();
@@ -158,6 +162,46 @@ impl KeyauthApi {
         }
         let json_rep: serde_json::Value = serde_json::from_str(&resp).unwrap();
         if json_rep["success"].as_bool().unwrap() {
+            Ok(())
+        } else {
+            Err(json_rep["message"].as_str().unwrap().to_string())
+        }
+    }
+
+    pub fn login(&mut self, username: String, password: String, hwid: Option<String>) -> Result<(), String> {
+        let hwidd = match hwid {
+            Some(hwid) => hwid,
+            None => machine_uuid::get(),
+        };
+        let mut req_data = HashMap::new();
+        req_data.insert("type", "login");
+        req_data.insert("username", &username);
+        req_data.insert("pass", &password);
+        req_data.insert("hwid", &hwidd);
+        req_data.insert("sessionid", &self.session_id);
+        req_data.insert("name", &self.name);
+        req_data.insert("ownerid", &self.owner_id);
+
+        let req = Self::request(req_data, &self.api_url);
+        let head = req.headers().clone();
+        let resp = req.text().unwrap();
+
+        if !head.contains_key("signature") {
+            return Err("Request was tampered with".to_string());
+        }
+        let sig = head.get("signature").unwrap().to_str().unwrap();
+        if sig != Self::make_hmac(&resp, &self.enckey_s) {
+            return Err("Request was tampered with".to_string());
+        }
+        let json_rep: serde_json::Value = serde_json::from_str(&resp).unwrap();
+
+        if json_rep["success"].as_bool().unwrap() {
+            self.username = username;
+            self.ip = json_rep["info"]["ip"].as_str().unwrap().to_string();
+            self.hwid = hwidd;
+            self.create_date = json_rep["info"]["createdate"].as_str().unwrap().to_string();
+            self.last_login = json_rep["info"]["lastlogin"].as_str().unwrap().to_string();
+            self.subscription = json_rep["info"]["subscriptions"][0]["subscription"].as_str().unwrap().to_string();
             Ok(())
         } else {
             Err(json_rep["message"].as_str().unwrap().to_string())

@@ -27,4 +27,13 @@ fn all() {
 //        println!("{}", res.err().unwrap());
 //        assert!(false);
 //    }
+
+    //login
+//    res = auth.login("e5b8584bbf614e32ae65ae677da69f65".to_string(), "idfk".to_string(), None);
+//    if res.is_ok() {
+//        assert!(true);
+//    } else {
+//        println!("{}", res.err().unwrap());
+//        assert!(false);
+//    }
 }
