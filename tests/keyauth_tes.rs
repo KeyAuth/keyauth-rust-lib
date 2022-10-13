@@ -29,13 +29,13 @@ fn all() {
 //    }
 
     //login
-//    res = auth.login("e5b8584bbf614e32ae65ae677da69f65".to_string(), "idfk".to_string(), None);
-//    if res.is_ok() {
-//        assert!(true);
-//    } else {
-//        println!("{}", res.err().unwrap());
-//        assert!(false);
-//    }
+    res = auth.login("e5b8584bbf614e32ae65ae677da69f65".to_string(), "idfk".to_string(), None);
+    if res.is_ok() {
+        assert!(true);
+    } else {
+        println!("{}", res.err().unwrap());
+        assert!(false);
+    }
 
     //license
 //    res = auth.license("OTFAZ2-BRBV9Q-LFT8LK-173YMN-YRWNUM-79VUF9".to_string(), None);
@@ -45,4 +45,16 @@ fn all() {
 //        println!("{}", res.err().unwrap());
 //        assert!(false);
 //    }
+
+    //var
+//    assert_eq!("vardata", auth.var("varid".to_string()).unwrap());
+
+    //webhook
+//    auth.webhook("3TeJjEXyUs".to_string(), "".to_string()).unwrap();
+
+    //setvar
+//    auth.setvar("somevar".to_string(), "some var data".to_string()).unwrap();
+
+    //getvar
+//    assert_eq!(auth.getvar("somevar".to_string()).unwrap(), "some var data".to_string());
 }

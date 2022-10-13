@@ -2,6 +2,7 @@ use uuid::Uuid;
 use std::collections::HashMap;
 use reqwest::blocking::Client;
 use hmac_sha256::HMAC;
+use base16::decode;
 
 pub struct KeyauthApi {
     name: String,
@@ -247,6 +248,192 @@ impl KeyauthApi {
         } else {
             Err(json_rep["message"].as_str().unwrap().to_string())
         }
+    }
+
+    pub fn var(&mut self, varid: String) -> Result<String, String> {
+        let mut req_data = HashMap::new();
+        req_data.insert("type", "var");
+        req_data.insert("varid", &varid);
+        req_data.insert("sessionid", &self.session_id);
+        req_data.insert("name", &self.name);
+        req_data.insert("ownerid", &self.owner_id);
+
+        let req = Self::request(req_data, &self.api_url);
+        let head = req.headers().clone();
+        let resp = req.text().unwrap();
+
+        if !head.contains_key("signature") {
+            return Err("Request was tampered with".to_string());
+        }
+        let sig = head.get("signature").unwrap().to_str().unwrap();
+        if sig != Self::make_hmac(&resp, &self.enckey_s) {
+            return Err("Request was tampered with".to_string());
+        }
+        let json_rep: serde_json::Value = serde_json::from_str(&resp).unwrap();
+
+        if json_rep["success"].as_bool().unwrap() {
+            Ok(json_rep["message"].as_str().unwrap().to_string())
+        } else {
+            Err(json_rep["message"].as_str().unwrap().to_string())
+        }
+    }
+
+    pub fn file(&mut self, fileid: String) -> Result<Vec<u8>, String> {
+        let mut req_data = HashMap::new();
+        req_data.insert("type", "file");
+        req_data.insert("fileid", &fileid);
+        req_data.insert("sessionid", &self.session_id);
+        req_data.insert("name", &self.name);
+        req_data.insert("ownerid", &self.owner_id);
+
+        let req = Self::request(req_data, &self.api_url);
+        let head = req.headers().clone();
+        let resp = req.text().unwrap();
+
+        if !head.contains_key("signature") {
+            return Err("Request was tampered with".to_string());
+        }
+        let sig = head.get("signature").unwrap().to_str().unwrap();
+        if sig != Self::make_hmac(&resp, &self.enckey_s) {
+            return Err("Request was tampered with".to_string());
+        }
+        let json_rep: serde_json::Value = serde_json::from_str(&resp).unwrap();
+
+        if json_rep["success"].as_bool().unwrap() {
+            Ok(decode(json_rep["contents"].as_str().unwrap()).unwrap())
+        } else {
+            Err(json_rep["message"].as_str().unwrap().to_string())
+        }
+    }
+
+    pub fn webhook(&mut self, webid: String, params: String) -> Result<String, String> {
+        let mut req_data = HashMap::new();
+        req_data.insert("type", "webhook");
+        req_data.insert("webid", &webid);
+        req_data.insert("params", &params);
+        req_data.insert("sessionid", &self.session_id);
+        req_data.insert("name", &self.name);
+        req_data.insert("ownerid", &self.owner_id);
+
+        let req = Self::request(req_data, &self.api_url);
+        let head = req.headers().clone();
+        let resp = req.text().unwrap();
+
+        if !head.contains_key("signature") {
+            return Err("Request was tampered with".to_string());
+        }
+        let sig = head.get("signature").unwrap().to_str().unwrap();
+        if sig != Self::make_hmac(&resp, &self.enckey_s) {
+            return Err("Request was tampered with".to_string());
+        }
+        let json_rep: serde_json::Value = serde_json::from_str(&resp).unwrap();
+
+        if json_rep["success"].as_bool().unwrap() {
+            Ok(json_rep["message"].as_str().unwrap().to_string())
+        } else {
+            Err(json_rep["message"].as_str().unwrap().to_string())
+        }
+    }
+
+    pub fn checkblacklist(&mut self) -> Result<(), String> {
+        let mut req_data = HashMap::new();
+        req_data.insert("type", "checkblacklist");
+        req_data.insert("sessionid", &self.session_id);
+        req_data.insert("name", &self.name);
+        req_data.insert("ownerid", &self.owner_id);
+
+        let req = Self::request(req_data, &self.api_url);
+        let head = req.headers().clone();
+        let resp = req.text().unwrap();
+
+        if !head.contains_key("signature") {
+            return Err("Request was tampered with".to_string());
+        }
+        let sig = head.get("signature").unwrap().to_str().unwrap();
+        if sig != Self::make_hmac(&resp, &self.enckey_s) {
+            return Err("Request was tampered with".to_string());
+        }
+        let json_rep: serde_json::Value = serde_json::from_str(&resp).unwrap();
+
+        if json_rep["success"].as_bool().unwrap() {
+            self.blacklisted = true;
+            Ok(())
+        } else {
+            self.blacklisted = false;
+            Ok(())
+        }
+    }
+
+    pub fn setvar(&mut self, varname: String, varvalue: String) -> Result<(), String> {
+        let mut req_data = HashMap::new();
+        req_data.insert("type", "setvar");
+        req_data.insert("var", &varname);
+        req_data.insert("data", &varvalue);
+        req_data.insert("sessionid", &self.session_id);
+        req_data.insert("name", &self.name);
+        req_data.insert("ownerid", &self.owner_id);
+
+        let req = Self::request(req_data, &self.api_url);
+        let head = req.headers().clone();
+        let resp = req.text().unwrap();
+
+        if !head.contains_key("signature") {
+            return Err("Request was tampered with".to_string());
+        }
+        let sig = head.get("signature").unwrap().to_str().unwrap();
+        if sig != Self::make_hmac(&resp, &self.enckey_s) {
+            return Err("Request was tampered with".to_string());
+        }
+        let json_rep: serde_json::Value = serde_json::from_str(&resp).unwrap();
+
+        self.message = json_rep["message"].as_str().unwrap().to_string();
+        self.success = json_rep["success"].as_bool().unwrap();
+        Ok(())
+    }
+
+    pub fn getvar(&mut self, varname: String) -> Result<String, String> {
+        let mut req_data = HashMap::new();
+        req_data.insert("type", "getvar");
+        req_data.insert("var", &varname);
+        req_data.insert("sessionid", &self.session_id);
+        req_data.insert("name", &self.name);
+        req_data.insert("ownerid", &self.owner_id);
+
+        let req = Self::request(req_data, &self.api_url);
+        let head = req.headers().clone();
+        let resp = req.text().unwrap();
+
+        if !head.contains_key("signature") {
+            return Err("Request was tampered with".to_string());
+        }
+        let sig = head.get("signature").unwrap().to_str().unwrap();
+        if sig != Self::make_hmac(&resp, &self.enckey_s) {
+            return Err("Request was tampered with".to_string());
+        }
+        let json_rep: serde_json::Value = serde_json::from_str(&resp).unwrap();
+
+        if json_rep["success"].as_bool().unwrap() {
+            Ok(json_rep["response"].as_str().unwrap().to_string())
+        } else {
+            Err(json_rep["message"].as_str().unwrap().to_string())
+        }
+    }
+
+    pub fn log(&mut self, message: String, pcuser: Option<String>) {
+        let usr = match pcuser {
+            Some(pcuser) => pcuser,
+            None => self.username.clone(),
+        };
+
+        let mut req_data = HashMap::new();
+        req_data.insert("type", "log");
+        req_data.insert("message", &message);
+        req_data.insert("pcuser", &usr);
+        req_data.insert("sessionid", &self.session_id);
+        req_data.insert("name", &self.name);
+        req_data.insert("ownerid", &self.owner_id);
+
+        Self::request(req_data, &self.api_url);
     }
 
     fn request(req_data: HashMap<&str, &str>, url: &str) -> reqwest::blocking::Response {
