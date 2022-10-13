@@ -10,7 +10,8 @@ fn all() {
         assert!(false);
     }
     //register
-//    res = auth.register(uuid::Uuid::new_v4().simple().to_string(), uuid::Uuid::new_v4().simple().to_string(), "A14076-E4NEW0-SRJP74-U24P9D-Z3PDA1-4SUQVA".to_string());
+//    let username = uuid::Uuid::new_v4().simple().to_string();
+//    res = auth.register(username.clone(), uuid::Uuid::new_v4().simple().to_string(), "QMNTLV-TMFZZ1-D65IA6-KDTN5D-B526SV-VR2SAY".to_string());
 //    if res.is_ok() {
 //        assert!(true);
 //    } else {
@@ -18,5 +19,12 @@ fn all() {
 //        assert!(false);
 //    }
 
-    
+    //upgrade
+//    res = auth.upgrade(username.clone(), "KFGDHI-MVJECD-Z8NR7J-M64HSJ-KL81MY-JBPQ1I".to_string());
+//    if res.is_ok() {
+//        assert!(true);
+//    } else {
+//        println!("{}", res.err().unwrap());
+//        assert!(false);
+//    }
 }

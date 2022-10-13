@@ -4,7 +4,7 @@ i decided to upgrade the official keyauth library to the latest api (1.2) just c
 # TODO
 - [x] init
 - [x] register
-- [ ] upgrade
+- [x] upgrade
 - [ ] login
 - [ ] license
 - [ ] fetchOnline
