@@ -7,18 +7,20 @@ i decided to upgrade the official keyauth library to the latest api (1.2) just c
 - [x] upgrade
 - [x] login
 - [x] license
-- [ ] fetchOnline
+- [x] fetchOnline
 - [x] setvar (user)
 - [x] getvar (user)
 - [x] var
 - [x] checkblacklist
-- [ ] chatget
-- [ ] chatsend
+- [x] chatget
+- [x] chatsend
 - [x] log
 - [x] webhook
-- [ ] ban
+- [x] ban
 - [x] file (download)
-- [ ] check (session)
+- [x] check (session)
+
+- [ ] hash check
 
 maybe will be ported from c++
 - [ ] weblogin

@@ -44,7 +44,7 @@ pub struct KeyauthApi {
 }
 
 impl KeyauthApi {
-    /// creats a new KeyauthApi and its defaults, api_url has to be api version 1.2 example: "https://keyauth.win/api/1.2/" or if you have a custom api domain: "api.example.com/1.2/"
+    /// creats a new KeyauthApi and its defaults, api_url has to be api version 1.2 example: "https://keyauth.win/api/1.2/" or if you have a custom api domain: "https://api.example.com/1.2/"
     pub fn new(name: &str, owner_id: &str, secret: &str, version: &str, api_url: &str) -> Self {
         Self {
             name: name.to_string(),
@@ -73,7 +73,7 @@ impl KeyauthApi {
         }
     }
 
-    /// initializes a session, **required to run before any other function in this struct!!!**
+    /// initializes a session, **required to run before any other function in this struct!!!** accept new
     pub fn init(&mut self) -> Result<(), String> {
         self.enckey = Uuid::new_v4().simple().to_string();
         self.enckey_s = format!("{}-{}", self.enckey, self.secret);
@@ -385,6 +385,128 @@ impl KeyauthApi {
             self.blacklisted = false;
             Ok(())
         }
+    }
+
+    /// checks if the session is still active or if it expired
+    pub fn check_session(&mut self) -> Result<bool, String> {
+        let mut req_data = HashMap::new();
+        req_data.insert("type", "check");
+        req_data.insert("sessionid", &self.session_id);
+        req_data.insert("name", &self.name);
+        req_data.insert("ownerid", &self.owner_id);
+
+        let req = Self::request(req_data, &self.api_url);
+        let head = req.headers().clone();
+        let resp = req.text().unwrap();
+
+        if !head.contains_key("signature") {
+            return Err("Request was tampered with".to_string());
+        }
+        let sig = head.get("signature").unwrap().to_str().unwrap();
+        if sig != Self::make_hmac(&resp, &self.enckey_s) {
+            return Err("Request was tampered with".to_string());
+        }
+        let json_rep: serde_json::Value = serde_json::from_str(&resp).unwrap();
+
+        Ok(json_rep["success"].as_bool().unwrap())
+    }
+
+    /// gets json of online users
+    pub fn fetch_online(&mut self) -> Result<serde_json::Value, String> {
+        let mut req_data = HashMap::new();
+        req_data.insert("type", "fetchOnline");
+        req_data.insert("sessionid", &self.session_id);
+        req_data.insert("name", &self.name);
+        req_data.insert("ownerid", &self.owner_id);
+
+        let req = Self::request(req_data, &self.api_url);
+        let head = req.headers().clone();
+        let resp = req.text().unwrap();
+
+        if !head.contains_key("signature") {
+            return Err("Request was tampered with".to_string());
+        }
+        let sig = head.get("signature").unwrap().to_str().unwrap();
+        if sig != Self::make_hmac(&resp, &self.enckey_s) {
+            return Err("Request was tampered with".to_string());
+        }
+        let json_rep: serde_json::Value = serde_json::from_str(&resp).unwrap();
+
+        if json_rep["success"].as_bool().unwrap() {
+            Ok(json_rep["users"].clone())
+        } else {
+            Err(json_rep["message"].as_str().unwrap().to_string())
+        }
+    }
+
+    /// gets the arry of messages in a channel
+    pub fn get_chat(&mut self, channel: String) -> Result<serde_json::Value, String> {
+        let mut req_data = HashMap::new();
+        req_data.insert("type", "chatget");
+        req_data.insert("channel", &channel);
+        req_data.insert("sessionid", &self.session_id);
+        req_data.insert("name", &self.name);
+        req_data.insert("ownerid", &self.owner_id);
+
+        let req = Self::request(req_data, &self.api_url);
+        let head = req.headers().clone();
+        let resp = req.text().unwrap();
+
+        if !head.contains_key("signature") {
+            return Err("Request was tampered with".to_string());
+        }
+        let sig = head.get("signature").unwrap().to_str().unwrap();
+        if sig != Self::make_hmac(&resp, &self.enckey_s) {
+            return Err("Request was tampered with".to_string());
+        }
+        let json_rep: serde_json::Value = serde_json::from_str(&resp).unwrap();
+
+        if json_rep["success"].as_bool().unwrap() {
+            Ok(json_rep["messages"].clone())
+        } else {
+            Err(json_rep["message"].as_str().unwrap().to_string())
+        }
+    }
+
+    /// sends a chat message in a channel
+    pub fn send_chat_message(&mut self, channel: String, message: String) -> Result<(), String> {
+        let mut req_data = HashMap::new();
+        req_data.insert("type", "chatsend");
+        req_data.insert("channel", &channel);
+        req_data.insert("message", &message);
+        req_data.insert("sessionid", &self.session_id);
+        req_data.insert("name", &self.name);
+        req_data.insert("ownerid", &self.owner_id);
+
+        let req = Self::request(req_data, &self.api_url);
+        let head = req.headers().clone();
+        let resp = req.text().unwrap();
+
+        if !head.contains_key("signature") {
+            return Err("Request was tampered with".to_string());
+        }
+        let sig = head.get("signature").unwrap().to_str().unwrap();
+        if sig != Self::make_hmac(&resp, &self.enckey_s) {
+            return Err("Request was tampered with".to_string());
+        }
+        let json_rep: serde_json::Value = serde_json::from_str(&resp).unwrap();
+
+        if json_rep["success"].as_bool().unwrap() {
+            Ok(())
+        } else {
+            Err(json_rep["message"].as_str().unwrap().to_string())
+        }
+    }
+
+    /// self explanatory
+    pub fn ban(&mut self) {
+        let mut req_data = HashMap::new();
+        req_data.insert("type", "ban");
+        req_data.insert("sessionid", &self.session_id);
+        req_data.insert("name", &self.name);
+        req_data.insert("ownerid", &self.owner_id);
+
+        Self::request(req_data, &self.api_url);
     }
 
     /// sets a user variable to varvalue
