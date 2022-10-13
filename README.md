@@ -19,8 +19,7 @@ i decided to upgrade the official keyauth library to the latest api (1.2) just c
 - [x] ban
 - [x] file (download)
 - [x] check (session)
-
-- [ ] hash check
+- [x] hash
 
 maybe will be ported from c++
 - [ ] weblogin
