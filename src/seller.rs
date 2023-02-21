@@ -30,7 +30,7 @@ pub mod licenses {
         req_data.insert("mask", mask.as_str());
         let level = match level {
             Some(l) => l,
-            None => 0,
+            None => 1,
         };
         let level = level.to_string();
         req_data.insert("level", level.as_str());
@@ -44,7 +44,9 @@ pub mod licenses {
             Some(o) => o,
             None => "none".to_string(),
         };
-        req_data.insert("owner", owner.as_str());
+        if owner != "none" {
+            req_data.insert("owner", owner.as_str());
+        }
 
 
         let res = super::request(req_data, url);
