@@ -21,29 +21,42 @@ pub mod licenses {
         let mut req_data = HashMap::new();
         req_data.insert("type", "add");
         req_data.insert("sellerkey", &sellerkey);
-        req_data.insert("expiry", &expiry.to_string());
-        if let Some(m) = mask {
-            req_data.insert("mask", &m);
-        }
-        if let Some(l) = level {
-            req_data.insert("level", &l.to_string());
-        }
-        if let Some(a) = amount {
-            req_data.insert("amount", &a.to_string());
-        }
-        if let Some(o) = owner {
-            req_data.insert("owner", &o);
-        }
+        let expiry = expiry.to_string();
+        req_data.insert("expiry", expiry.as_str());
+        let mask = match mask {
+            Some(m) => m,
+            None => "XXXXXX-XXXXXX-XXXXXX-XXXXXX-XXXXXX-XXXXXX".to_string(),
+        };
+        req_data.insert("mask", mask.as_str());
+        let level = match level {
+            Some(l) => l,
+            None => 0,
+        };
+        let level = level.to_string();
+        req_data.insert("level", level.as_str());
+        let amount = match amount {
+            Some(a) => a,
+            None => 1,
+        };
+        let amount = amount.to_string();
+        req_data.insert("amount", amount.as_str());
+        let owner = match owner {
+            Some(o) => o,
+            None => "none".to_string(),
+        };
+        req_data.insert("owner", owner.as_str());
+
 
         let res = super::request(req_data, url);
+        let status = res.status();
         let resp = res.text().unwrap();
         let json: Value = serde_json::from_str(&resp).unwrap();
         if !json["success"].as_bool().unwrap() {
             return Err(json["message"].to_string());
         }
-        if res.status() == StatusCode::OK {
+        if status == StatusCode::OK {
             return Ok(vec![json["key"].as_str().unwrap().to_string()]);
-        } else if res.status() == StatusCode::FOUND {
+        } else if status == StatusCode::FOUND {
             return Ok(json["keys"].as_array().unwrap().iter().map(|x| x.as_str().unwrap().to_string()).collect());
         }
         Err("SOMETHING RLY BAD HAPPENED PLEASE CONTACT THE LIB DEVELOPER".to_string())
@@ -89,9 +102,13 @@ pub mod licenses {
         req_data.insert("sellerkey", sellerkey);
         req_data.insert("key", license);
         req_data.insert("type", "del");
-        if let Some(u) = user_too {
-            req_data.insert("user_too", (u as i32).to_string().as_str());
-        }
+        let user_too = match user_too {
+            Some(u) => u,
+            None => false,
+        };
+        let user_too = if user_too { 1 } else { 0 };
+        let user_too = user_too.to_string();
+        req_data.insert("user_too", user_too.as_str());
 
         let res = super::request(req_data, url);
         let resp = res.text().unwrap();
@@ -164,7 +181,8 @@ pub mod licenses {
         let mut req_data = HashMap::new();
         req_data.insert("sellerkey", sellerkey);
         req_data.insert("type", "addtime");
-        req_data.insert("time", &time.to_string());
+        let time = time.to_string();
+        req_data.insert("time", time.as_str());
 
         let res = super::request(req_data, url);
         let resp = res.text().unwrap();
@@ -181,9 +199,13 @@ pub mod licenses {
         req_data.insert("type", "ban");
         req_data.insert("key", license);
         req_data.insert("reason", reason);
-        if let Some(u) = user_too {
-            req_data.insert("user_too", (u as i32).to_string().as_str());
-        }
+        let user_too = match user_too {
+            Some(u) => u,
+            None => false,
+        };
+        let user_too = if user_too { 1 } else { 0 };
+        let user_too = user_too.to_string();
+        req_data.insert("user_too", user_too.as_str());
 
         let res = super::request(req_data, url);
         let resp = res.text().unwrap();
@@ -252,10 +274,16 @@ pub mod user {
         req_data.insert("type", "adduser");
         req_data.insert("user", name);
         req_data.insert("sub", sub);
-        req_data.insert("expiry", &expiry.to_string());
-        if let Some(p) = pass {
-            req_data.insert("pass", p.as_str());
+        let expiry = expiry.to_string();
+        req_data.insert("expiry", expiry.as_str());
+        let pass = match pass {
+            Some(p) => p,
+            None => "null".to_string(),
+        };
+        if pass != "null" {
+            req_data.insert("pass", pass.as_str());
         }
+
 
         let res = super::request(req_data, url);
         let resp = res.text().unwrap();
@@ -364,8 +392,12 @@ pub mod user {
         req_data.insert("sellerkey", sellerkey);
         req_data.insert("type", "banuser");
         req_data.insert("user", name);
-        if let Some(r) = reason {
-            req_data.insert("reason", r.as_str());
+        let reason = match reason {
+            Some(r) => r,
+            None => "null".to_string(),
+        };
+        if reason != "null" {
+            req_data.insert("reason", &reason);
         }
 
         let res = super::request(req_data, url);
@@ -432,9 +464,12 @@ pub mod user {
         req_data.insert("user", name);
         req_data.insert("sub", sub);
         req_data.insert("expiry", days);
-        if let Some(a) = active_only {
-            req_data.insert("active_only", (a as i32).to_string().as_str());
-        }
+        let active_only = match active_only {
+            Some(a) => a,
+            None => false,
+        };
+        let active_only = if active_only { "1" } else { "0" };
+        req_data.insert("active_only", active_only);
 
         let res = super::request(req_data, url);
         let resp = res.text().unwrap();
@@ -617,7 +652,8 @@ pub mod user {
         req_data.insert("sellerkey", sellerkey);
         req_data.insert("type", "setcooldown");
         req_data.insert("user", name);
-        req_data.insert("cooldown", &cooldown.to_string());
+        let cooldown = cooldown.to_string();
+        req_data.insert("cooldown", cooldown.as_str());
 
         let res = super::request(req_data, url);
         let resp = res.text().unwrap();
@@ -774,7 +810,8 @@ pub mod chat {
         req_data.insert("sellerkey", sellerkey);
         req_data.insert("type", "muteuser");
         req_data.insert("user", user);
-        req_data.insert("time", &time.to_string());
+        let time = time.to_string();
+        req_data.insert("time", time.as_str());
 
         let res = super::request(req_data, url);
         let resp = res.text().unwrap();
@@ -883,9 +920,9 @@ pub fn webhook_create(sellerkey: &str, url: String, baseurl: &str, user_agent: &
     req_data.insert("type", "addwebhook");
     req_data.insert("baseurl", baseurl);
     req_data.insert("ua", user_agent);
-    if let Some(authed) = authed {
-        req_data.insert("authed", &authed.to_string());
-    }
+    let authed = authed.unwrap_or(false);
+    let authed = if authed { "1" } else { "0" };
+    req_data.insert("authed", authed);
 
     let res = request(req_data, url);
     let resp = res.text().unwrap();
@@ -969,7 +1006,8 @@ pub mod variables {
         req_data.insert("type", "addvar");
         req_data.insert("name", name);
         req_data.insert("data", value);
-        req_data.insert("authed", (authed as i32).to_string().as_str());
+        let authed = if authed { "1" } else { "0" };
+        req_data.insert("authed", authed);
 
         let res = super::request(req_data, url);
         let resp = res.text().unwrap();
@@ -1203,8 +1241,10 @@ pub mod settings {
         let mut req_data = HashMap::new();
         req_data.insert("sellerkey", sellerkey);
         req_data.insert("type", "updatesettings");
-        req_data.insert("enabled", settings.enabled.to_string().as_str());
-        req_data.insert("hwidcheck", settings.hwidcheck.to_string().as_str());
+        let enabled = settings.enabled.to_string();
+        req_data.insert("enabled", enabled.as_str());
+        let hwidcheck = settings.hwidcheck.to_string();
+        req_data.insert("hwidcheck", hwidcheck.as_str());
         req_data.insert("ver", settings.ver.as_str());
         req_data.insert("download", settings.download.as_str());
         req_data.insert("webhook", settings.webhook.as_str());

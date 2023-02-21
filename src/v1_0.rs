@@ -129,7 +129,7 @@ impl KeyauthApi {
         };
         let mut req_data = HashMap::new();
         req_data.insert("type", encode_lower(b"register"));
-        req_data.insert("username", Ecnryption::encrypt(&username, &self.enckey, &init_iv));
+        req_data.insert("username", Encryption::encrypt(&username, &self.enckey, &init_iv));
         req_data.insert("pass", Encryption::encrypt(&password, &self.enckey, &init_iv));
         req_data.insert("key", Encryption::encrypt(&license, &self.enckey, &init_iv));
         req_data.insert("sessionid", encode_lower(self.session_id.as_bytes()));
@@ -562,7 +562,7 @@ impl KeyauthApi {
     }
 
     fn gen_init_iv() -> String {
-        let session_iv = Uuid::new_v4().to_simple().to_string()[..8].to_string();
+        let session_iv = Uuid::new_v4().to_string()[..8].to_string();
         digest(session_iv.as_bytes())
     }
 }

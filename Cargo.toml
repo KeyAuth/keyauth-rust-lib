@@ -9,8 +9,8 @@ license = "MIT"
 documentation = "https://docs.rs/keyauth/"
 
 [dependencies]
-aes = {version = "0.8.2", optional = true}
-block-modes = {version = "0.9.1", optional = true}
+aes = {version = "0.7.4", optional = true}
+block-modes = {version = "0.8.1", optional = true}
 sha256 = {version = "1.1.1", optional = true}
 webbrowser = "0.8.0"
 serde_json = "1.0.86"
