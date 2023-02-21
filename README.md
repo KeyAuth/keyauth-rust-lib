@@ -1,29 +1,10 @@
 # Unofficial keyauth rust library
-i decided to upgrade the official keyauth library to the latest api (1.2) just cus.
-
-# TODO
-- [x] init
-- [x] register
-- [x] upgrade
-- [x] login
-- [x] license
-- [x] fetchOnline
-- [x] setvar (user)
-- [x] getvar (user)
-- [x] var
-- [x] checkblacklist
-- [x] chatget
-- [x] chatsend
-- [x] log
-- [x] webhook
-- [x] ban
-- [x] file (download)
-- [x] check (session)
-- [x] hash
-
-maybe will be ported from c++
-- [ ] weblogin
+https://docs.rs/keyauth/latest/keyauth/
 
 # note
-A lot of code is from the [official rust library](https://github.com/KeyAuth/KeyAuth-Rust-Example)
-the reason this exists is because the official rust library uses api version 1.0 which i was told by wn#0111 is much slower https://davidon.top/i/kBEBwkm
+a lot of code is from the official keyauth library,
+now you may ask why does this even exist if its the same code from the official library?
+well the official library is old and uses 1.0 api only this has all 3 api versions and also seller api additionaly its on crates.io so you can just import it in Cargo.toml
+
+# TODO
+pre obfuscated version using https://docs.rs/goldberg/latest/goldberg/
