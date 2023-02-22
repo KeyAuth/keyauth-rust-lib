@@ -28,3 +28,7 @@ v1_0 = ["dep:aes", "dep:block-modes", "dep:sha256"]
 v1_1 = []
 v1_2 = ["dep:hmac-sha256"]
 seller = []
+all = ["v1_0", "v1_1", "v1_2", "seller"]
+
+[package.metadata.docs.rs]
+cargo-features = ["all"]
