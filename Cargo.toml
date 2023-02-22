@@ -1,6 +1,6 @@
 [package]
 name = "keyauth"
-version = "1.0.2"
+version = "1.0.21"
 edition = "2021"
 description = "unoficial keyauth library using api version 1.2"
 readme = "README.md"
