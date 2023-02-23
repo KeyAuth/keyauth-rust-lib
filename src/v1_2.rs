@@ -75,14 +75,13 @@ impl KeyauthApi {
     }
 
     /// initializes a session, **required to run before any other function in this struct!!!** accept new
-    pub fn init(&mut self, hash: Option<String>) -> Result<(), String> {
+    pub fn init(&mut self, hash: Option<&str>) -> Result<(), String> {
         self.enckey = Uuid::new_v4().simple().to_string();
         self.enckey_s = format!("{}-{}", self.enckey, self.secret);
         let mut req_data = HashMap::new();
         req_data.insert("type", "init");
-        let h = hash.clone().unwrap();
         if hash.is_some() {
-            req_data.insert("hash", &h);
+            req_data.insert("hash", hash.unwrap());
         }
         req_data.insert("ver", &self.version);
         req_data.insert("name", &self.name);
