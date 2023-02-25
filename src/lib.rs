@@ -19,6 +19,8 @@ auth.login("username".to_string(), "password".to_string(), Some("hwid".to_string
 ```
 
 also if you want to use an obfuscator for rust i recommend using [obfstr](https://crates.io/crates/obfstr) and [llvm obfuscator](https://github.com/eshard/obfuscator-llvm/wiki/Rust-obfuscation-guide)
+
+if the panic feature is enabled then the v1_2 api will panic insted of returning an error when it detects that the request was tampered with
 */
 
 #[cfg(feature = "v1_0")]

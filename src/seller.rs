@@ -163,8 +163,24 @@ pub mod licenses {
         Err(json["message"].to_string())
     }
 
+    #[derive(serde::Serialize, serde::Deserialize)]
+    pub struct License {
+        pub id: String,
+        pub key: String,
+        pub note: Option<String>,
+        pub expires: String,
+        pub status: String,
+        pub level: String,
+        pub gengy: String,
+        pub gendate: String,
+        pub usedon: Option<String>,
+        pub usedby: Option<String>,
+        pub app: String,
+        pub banned: String,
+    }
+
     /// if success = true returns a vector of all keys, the json/Value format can be found here https://docs.keyauth.cc/seller/licenses in the example response
-    pub fn fetch_all(sellerkey: &str, url: String) -> Result<Vec<Value>, String> {
+    pub fn fetch_all(sellerkey: &str, url: String) -> Result<Vec<License>, String> {
         let mut req_data = HashMap::new();
         req_data.insert("sellerkey", sellerkey);
         req_data.insert("type", "fetchallkeys");
@@ -173,7 +189,10 @@ pub mod licenses {
         let resp = res.text().unwrap();
         let json: Value = serde_json::from_str(&resp).unwrap();
         if json["success"].as_bool().unwrap() {
-            return Ok(json["keys"].as_array().unwrap().to_owned());
+            if json["keys"].is_string() {
+                return Ok(Vec::new());
+            }
+            return Ok(json["keys"].as_array().unwrap().iter().map(|x| serde_json::from_value(x.clone()).unwrap()).collect());
         }
         Err(json["message"].to_string())
     }
@@ -559,8 +578,23 @@ pub mod user {
         Err(json["message"].to_string())
     }
 
-    /// json/Value structure can be found https://docs.keyauth.cc/seller/users in the example response
-    pub fn fetch_all_users(sellerkey: &str, url: String) -> Result<Vec<Value>, String> {
+    #[derive(serde::Serialize, serde::Deserialize)]
+    pub struct User {
+        pub id: String,
+        pub username: String,
+        pub email: Option<String>,
+        pub password: Option<String>,
+        pub hwid: Option<String>,
+        pub app: String,
+        pub owner: String,
+        pub createdate: String,
+        pub lastlogin: Option<String>,
+        pub banned: Option<String>,
+        pub ip: Option<String>,
+        pub cooldown: Option<String>,
+    }
+
+    pub fn fetch_all_users(sellerkey: &str, url: String) -> Result<Vec<User>, String> {
         let mut req_data = HashMap::new();
         req_data.insert("sellerkey", sellerkey);
         req_data.insert("type", "fetchallusers");
@@ -569,7 +603,10 @@ pub mod user {
         let resp = res.text().unwrap();
         let json: Value = serde_json::from_str(&resp).unwrap();
         if json["success"].as_bool().unwrap() {
-            return Ok(json["users"].as_array().unwrap().to_vec());
+            if json["users"].is_string() {
+                return Ok(Vec::new());
+            }
+            return Ok(json["users"].as_array().unwrap().iter().map(|x| serde_json::from_value(x.clone()).unwrap()).collect());
         }
         Err(json["message"].to_string())
     }
@@ -589,8 +626,14 @@ pub mod user {
         Err(json["message"].to_string())
     }
 
-    /// json/Value structure can be found https://docs.keyauth.cc/seller/users in the example response
-    pub fn fetch_all_vars(sellerkey: &str, url: String) -> Result<Vec<Value>, String> {
+    #[derive(serde::Serialize, serde::Deserialize)]
+    pub struct UserVar {
+        pub name: String,
+        pub data: String,
+        pub user: String,
+    }
+
+    pub fn fetch_all_vars(sellerkey: &str, url: String) -> Result<Vec<UserVar>, String> {
         let mut req_data = HashMap::new();
         req_data.insert("sellerkey", sellerkey);
         req_data.insert("type", "fetchalluservars");
@@ -599,12 +642,34 @@ pub mod user {
         let resp = res.text().unwrap();
         let json: Value = serde_json::from_str(&resp).unwrap();
         if json["success"].as_bool().unwrap() {
-            return Ok(json["vars"].as_array().unwrap().to_vec());
+            if json["uservars"].is_string() {
+                return Ok(Vec::new());
+            }
+            return Ok(json["vars"].as_array().unwrap().iter().map(|x| serde_json::from_value(x.clone()).unwrap()).collect());
         }
         Err(json["message"].to_string())
     }
 
-    pub fn user_data(sellerkey: &str, url: String, name: &str) -> Result<Value, String> {
+    #[derive(serde::Serialize, serde::Deserialize)]
+    pub struct UserData {
+        pub username: String,
+        pub subscriptions: Vec<UserSubscription>,
+        pub ip: Option<String>,
+        pub hwid: Option<String>,
+        pub createdate: String,
+        pub lastlogin: Option<String>,
+        pub cooldown: Option<String>,
+        pub token: String,
+    }
+
+    #[derive(serde::Serialize, serde::Deserialize)]
+    pub struct UserSubscription {
+        pub subscription: String,
+        pub expiry: String,
+        pub key: Option<String>,
+    }
+
+    pub fn user_data(sellerkey: &str, url: String, name: &str) -> Result<UserData, String> {
         let mut req_data = HashMap::new();
         req_data.insert("sellerkey", sellerkey);
         req_data.insert("type", "userdata");
@@ -614,7 +679,7 @@ pub mod user {
         let resp = res.text().unwrap();
         let json: Value = serde_json::from_str(&resp).unwrap();
         if json["success"].as_bool().unwrap() {
-            return Ok(json);
+            return Ok(serde_json::from_value(json).unwrap());
         }
         Err(json["message"].to_string())
     }
@@ -628,7 +693,10 @@ pub mod user {
         let resp = res.text().unwrap();
         let json: Value = serde_json::from_str(&resp).unwrap();
         if json["success"].as_bool().unwrap() {
-            return Ok(json["usernames"].as_array().unwrap().iter().map(|x| x.to_string()).collect());
+            if json["usernames"].is_string() {
+                return Ok(Vec::new());
+            }
+            return Ok(json["usernames"].as_array().unwrap().iter().map(|x| x["username"].to_string()).collect());
         }
         Err(json["message"].to_string())
     }
@@ -643,7 +711,7 @@ pub mod user {
         let resp = res.text().unwrap();
         let json: Value = serde_json::from_str(&resp).unwrap();
         if json["success"].as_bool().unwrap() {
-            return Ok(json["count"].as_i64().unwrap());
+            return Ok(json["count"].to_string().parse().unwrap());
         }
         Err(json["message"].to_string())
     }
@@ -839,7 +907,13 @@ pub mod chat {
         Err(json["message"].to_string())
     }
 
-    pub fn fetch_all_channels(sellerkey: &str, url: String) -> Result<Vec<Value>, String> {
+    #[derive(serde::Serialize, serde::Deserialize)]
+    pub struct Chat {
+        pub name: String,
+        pub delay: u64,
+    }
+
+    pub fn fetch_all_channels(sellerkey: &str, url: String) -> Result<Vec<Chat>, String> {
         let mut req_data = HashMap::new();
         req_data.insert("sellerkey", sellerkey);
         req_data.insert("type", "fetchallchats");
@@ -848,7 +922,10 @@ pub mod chat {
         let resp = res.text().unwrap();
         let json: Value = serde_json::from_str(&resp).unwrap();
         if json["success"].as_bool().unwrap() {
-            return Ok(json["chats"].as_array().unwrap().to_vec());
+            if json["chats"].is_string() {
+                return Ok(Vec::new());
+            }
+            return Ok(json["chats"].as_array().unwrap().iter().map(|x| serde_json::from_value(x.clone()).unwrap()).collect());
         }
         Err(json["message"].to_string())
     }
@@ -862,6 +939,9 @@ pub mod chat {
         let resp = res.text().unwrap();
         let json: Value = serde_json::from_str(&resp).unwrap();
         if json["success"].as_bool().unwrap() {
+            if json["mutes"].is_string() {
+                return Ok(Vec::new());
+            }
             return Ok(json["mutes"].as_array().unwrap().to_vec());
         }
         Err(json["message"].to_string())
@@ -901,6 +981,15 @@ pub mod sessions {
         Err(json["message"].to_string())
     }
 
+    #[derive(serde::Serialize, serde::Deserialize)]
+    pub struct Session {
+        pub id: String,
+        pub credential: Option<String>,
+        pub expiry: String,
+        pub validated: String,
+        pub ip: String,
+    }
+
     pub fn list_all(sellerkey: &str, url: String) -> Result<Vec<Value>, String> {
         let mut req_data = HashMap::new();
         req_data.insert("sellerkey", sellerkey);
@@ -910,6 +999,9 @@ pub mod sessions {
         let resp = res.text().unwrap();
         let json: Value = serde_json::from_str(&resp).unwrap();
         if json["success"].as_bool().unwrap() {
+            if json["sessions"].is_string() {
+                return Ok(Vec::new());
+            }
             return Ok(json["sessions"].as_array().unwrap().to_vec());
         }
         Err(json["message"].to_string())
@@ -983,7 +1075,13 @@ pub mod files {
         Err(json["message"].to_string())
     }
 
-    pub fn fetch_all_files(sellerkey: &str, url: String) -> Result<Vec<Value>, String> {
+    #[derive(serde::Serialize, serde::Deserialize)]
+    pub struct File {
+        pub id: String,
+        pub url: String,
+    }
+
+    pub fn fetch_all_files(sellerkey: &str, url: String) -> Result<Vec<File>, String> {
         let mut req_data = HashMap::new();
         req_data.insert("sellerkey", sellerkey);
         req_data.insert("type", "fetchallfiles");
@@ -992,7 +1090,7 @@ pub mod files {
         let resp = res.text().unwrap();
         let json: Value = serde_json::from_str(&resp).unwrap();
         if json["success"].as_bool().unwrap() {
-            return Ok(json["files"].as_array().unwrap().to_vec());
+            return Ok(json["files"].as_array().unwrap().iter().map(|x| serde_json::from_value(x.clone()).unwrap()).collect());
         }
         Err(json["message"].to_string())
     }
@@ -1051,7 +1149,14 @@ pub mod variables {
         Err(json["message"].to_string())
     }
 
-    pub fn fetch_all(sellerkey: &str, url: String) -> Result<Vec<Value>, String> {
+    #[derive(serde::Serialize, serde::Deserialize)]
+    pub struct Variable {
+        pub varid: String,
+        pub msg: String,
+        pub authed: String,
+    }
+
+    pub fn fetch_all(sellerkey: &str, url: String) -> Result<Vec<Variable>, String> {
         let mut req_data = HashMap::new();
         req_data.insert("sellerkey", sellerkey);
         req_data.insert("type", "fetchallvars");
@@ -1060,7 +1165,7 @@ pub mod variables {
         let resp = res.text().unwrap();
         let json: Value = serde_json::from_str(&resp).unwrap();
         if json["success"].as_bool().unwrap() {
-            return Ok(json["vars"].as_array().unwrap().to_vec());
+            return Ok(json["vars"].as_array().unwrap().iter().map(|x| serde_json::from_value(x.clone()).unwrap()).collect());
         }
         Err(json["message"].to_string())
     }
@@ -1150,7 +1255,15 @@ pub mod blacklists {
         Err(json["message"].to_string())
     }
 
-    pub fn fetch_all(sellerkey: &str, url: String) -> Result<Vec<Value>, String> {
+    #[derive(serde::Serialize, serde::Deserialize)]
+    pub struct Blacklist {
+        pub hwid: Option<String>,
+        pub ip: Option<String>,
+        #[serde(rename = "type")]
+        pub typee: String,
+    }
+
+    pub fn fetch_all(sellerkey: &str, url: String) -> Result<Vec<Blacklist>, String> {
         let mut req_data = HashMap::new();
         req_data.insert("sellerkey", sellerkey);
         req_data.insert("type", "fetchallblacks");
@@ -1159,7 +1272,7 @@ pub mod blacklists {
         let resp = res.text().unwrap();
         let json: Value = serde_json::from_str(&resp).unwrap();
         if json["success"].as_bool().unwrap() {
-            return Ok(json["blacklists"].as_array().unwrap().to_vec());
+            return Ok(json["blacklists"].as_array().unwrap().iter().map(|x| serde_json::from_value(x.clone()).unwrap()).collect());
         }
         Err(json["message"].to_string())
     }
@@ -1199,7 +1312,7 @@ pub mod settings {
     use std::collections::HashMap;
     use serde_json::Value;
 
-    pub fn retrieve(sellerkey: &str, url: String) -> Result<Value, String> {
+    pub fn retrieve(sellerkey: &str, url: String) -> Result<Settings, String> {
         let mut req_data = HashMap::new();
         req_data.insert("sellerkey", sellerkey);
         req_data.insert("type", "getsettings");
@@ -1208,35 +1321,39 @@ pub mod settings {
         let resp = res.text().unwrap();
         let json: Value = serde_json::from_str(&resp).unwrap();
         if json["success"].as_bool().unwrap() {
-            return Ok(json);
+            return Ok(serde_json::from_value(json.clone()).unwrap());
         }
         Err(json["message"].to_string())
     }
 
+    #[derive(serde::Serialize, serde::Deserialize)]
     pub struct Settings {
         pub enabled: bool,
+        #[serde(rename = "hwid-lock")]
         pub hwidcheck: bool,
-        pub ver: String,
-        pub download: String,
+        pub version: String,
+        pub webdownload: String,
         pub webhook: String,
         pub resellerstore: String,
-        pub appdisabled: String,
-        pub usernametaken: String,
-        pub keynotfound: String,
-        pub keyused: String,
-        pub nosublevel: String,
-        pub usernamenotfound: String,
-        pub passmismatch: String,
-        pub hwidmismatch: String,
-        pub noactivesubs: String,
-        pub hwidblacked: String,
-        pub keypaused: String,
-        pub keyexpired: String,
+        pub disabledmsg: String,
+        pub usernametakenmsg: String,
+        pub licenseinvalidmsg: String,
+        pub keytakenmsg: String,
+        pub nosubmsg: String,
+        pub userinvalidmsg: String,
+        pub passinvalidmsg: String,
+        pub hwidmismatchmsg: String,
+        pub noactivesubmsg: String,
+        pub blackedmsg: String,
+        pub pausedmsg: String,
+        pub expiredmsg: String,
         pub sellixsecret: String,
-        pub dayproduct: String,
-        pub weekprocuct: String,
-        pub monthproduct: String,
-        pub lifetimeproduct: String,
+        pub dayresellerproductid: String,
+        pub weekresellerproductid: String,
+        pub monthresellerproductid: String,
+        pub liferesellerproductid: String,
+        /// only used for getsettings
+        pub cooldown: String,
     }
 
     pub fn update(sellerkey: &str, url: String, settings: Settings) -> Result<String, String> {
@@ -1247,27 +1364,27 @@ pub mod settings {
         req_data.insert("enabled", enabled.as_str());
         let hwidcheck = settings.hwidcheck.to_string();
         req_data.insert("hwidcheck", hwidcheck.as_str());
-        req_data.insert("ver", settings.ver.as_str());
-        req_data.insert("download", settings.download.as_str());
+        req_data.insert("ver", settings.version.as_str());
+        req_data.insert("download", settings.webdownload.as_str());
         req_data.insert("webhook", settings.webhook.as_str());
         req_data.insert("resellerstore", settings.resellerstore.as_str());
-        req_data.insert("appdisabled", settings.appdisabled.as_str());
-        req_data.insert("usernametaken", settings.usernametaken.as_str());
-        req_data.insert("keynotfound", settings.keynotfound.as_str());
-        req_data.insert("keyused", settings.keyused.as_str());
-        req_data.insert("nosublevel", settings.nosublevel.as_str());
-        req_data.insert("usernamenotfound", settings.usernamenotfound.as_str());
-        req_data.insert("passmismatch", settings.passmismatch.as_str());
-        req_data.insert("hwidmismatch", settings.hwidmismatch.as_str());
-        req_data.insert("noactivesubs", settings.noactivesubs.as_str());
-        req_data.insert("hwidblacked", settings.hwidblacked.as_str());
-        req_data.insert("keypaused", settings.keypaused.as_str());
-        req_data.insert("keyexpired", settings.keyexpired.as_str());
+        req_data.insert("appdisabled", settings.disabledmsg.as_str());
+        req_data.insert("usernametaken", settings.usernametakenmsg.as_str());
+        req_data.insert("keynotfound", settings.licenseinvalidmsg.as_str());
+        req_data.insert("keyused", settings.keytakenmsg.as_str());
+        req_data.insert("nosublevel", settings.nosubmsg.as_str());
+        req_data.insert("usernamenotfound", settings.userinvalidmsg.as_str());
+        req_data.insert("passmismatch", settings.passinvalidmsg.as_str());
+        req_data.insert("hwidmismatch", settings.hwidmismatchmsg.as_str());
+        req_data.insert("noactivesubs", settings.noactivesubmsg.as_str());
+        req_data.insert("hwidblacked", settings.blackedmsg.as_str());
+        req_data.insert("keypaused", settings.pausedmsg.as_str());
+        req_data.insert("keyexpired", settings.expiredmsg.as_str());
         req_data.insert("sellixsecret", settings.sellixsecret.as_str());
-        req_data.insert("dayproduct", settings.dayproduct.as_str());
-        req_data.insert("weekprocuct", settings.weekprocuct.as_str());
-        req_data.insert("monthproduct", settings.monthproduct.as_str());
-        req_data.insert("lifetimeproduct", settings.lifetimeproduct.as_str());
+        req_data.insert("dayproduct", settings.dayresellerproductid.as_str());
+        req_data.insert("weekprocuct", settings.weekresellerproductid.as_str());
+        req_data.insert("monthproduct", settings.liferesellerproductid.as_str());
+        req_data.insert("lifetimeproduct", settings.liferesellerproductid.as_str());
 
         let res = super::request(req_data, url);
         let resp = res.text().unwrap();
@@ -1382,7 +1499,13 @@ pub mod web_loader {
     use std::collections::HashMap;
     use serde_json::Value;
 
-    pub fn retrieve_all_buttons(sellerkey: &str, url: String) -> Result<Vec<Value>, String> {
+    #[derive(serde::Serialize, serde::Deserialize)]
+    pub struct WebLoaderButton {
+        pub text: String,
+        pub value: String,
+    }
+
+    pub fn retrieve_all_buttons(sellerkey: &str, url: String) -> Result<Vec<WebLoaderButton>, String> {
         let mut req_data = HashMap::new();
         req_data.insert("sellerkey", sellerkey);
         req_data.insert("type", "fetchallbuttons");
@@ -1391,7 +1514,10 @@ pub mod web_loader {
         let resp = res.text().unwrap();
         let json: Value = serde_json::from_str(&resp).unwrap();
         if json["success"].as_bool().unwrap() {
-            return Ok(json["buttons"].as_array().unwrap().to_vec());
+            if json["buttons"].is_string() {
+                return Ok(Vec::new());
+            }
+            return Ok(json["buttons"].as_array().unwrap().iter().map(|x| serde_json::from_value(x.clone()).unwrap()).collect());
         }
         Err(json["message"].to_string())
     }

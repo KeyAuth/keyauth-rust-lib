@@ -1,6 +1,6 @@
 [package]
 name = "keyauth"
-version = "1.0.3"
+version = "1.0.4"
 edition = "2021"
 description = "keyauth library"
 readme = "README.md"
@@ -28,7 +28,8 @@ v1_0 = ["dep:aes", "dep:block-modes", "dep:sha256"]
 v1_1 = []
 v1_2 = ["dep:hmac-sha256"]
 seller = []
-all = ["v1_0", "v1_1", "v1_2", "seller"]
+all = ["v1_0", "v1_1", "v1_2", "seller", "panic"]
+panic = []
 
 [package.metadata.docs.rs]
 features = ["all"]
