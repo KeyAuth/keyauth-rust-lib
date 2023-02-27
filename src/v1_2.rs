@@ -9,6 +9,14 @@ auth.login("username", "password", Some("hwid".to_string()).unwrap()); // if you
 ```
 
 also if you want to use an obfuscator for rust i recommend using [obfstr](https://crates.io/crates/obfstr) and [llvm obfuscator](https://github.com/eshard/obfuscator-llvm/wiki/Rust-obfuscation-guide)
+
+if you want the function bodys somewhat pre obfuscated enable the obf_v1_2 feature
+
+if obf_linux_v1_0 feature is enabled and the library was built in release mode:
+on non linux os: does nothing
+on linux: if detects a debugger at the start and before return of every function it will kill the program
+
+note if both obf_v1_2 and obf_linux_v1_2 are enabled the ptrace calls (which are used to detect debuggers) will be somewhat obfuscated
 */
 
 use uuid::Uuid;
@@ -16,6 +24,21 @@ use std::collections::HashMap;
 use reqwest::blocking::Client;
 use hmac_sha256::HMAC;
 use base16::decode;
+
+#[cfg(feature = "obf_v1_2")]
+use goldberg::goldberg_stmts;
+
+macro_rules! with_goldberg {
+    ( $body:block ) => {{
+        #[cfg(feature = "obf_v1_2")]
+        let result = goldberg_stmts! { $body };
+
+        #[cfg(not(feature = "obf_v1_2"))]
+        let result = { $body };
+
+        result
+    }};
+}
 
 /// every function in this struct (accept log) returns a Result and Err("Request was tampered with") will be returned if the request signature doesnt mathc the sha256 hmac of the message
 pub struct KeyauthApi {
