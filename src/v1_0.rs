@@ -9,15 +9,6 @@ auth.login("username", "password", Some("hwid".to_string())).unwrap(); // if you
 ```
 
 also if you want to use an obfuscator for rust i recommend using [obfstr](https://crates.io/crates/obfstr) and [llvm obfuscator](https://github.com/eshard/obfuscator-llvm/wiki/Rust-obfuscation-guide)
-
-if you want the function bodys somewhat pre obfuscated enable the obf_v1_0 feature
-
-if obf_linux_v1_0 feature is enabled and the library was built in release mode:
-on non linux os: does nothing
-on linux: if detects a debugger at the start and before return of every function it will kill the program
-
-note if both obf_v1_0 and obf_linux_v1_0 are enabled the ptrace calls (which are used to detect debuggers) will be somewhat obfuscated
-the difference between obf_linux_v1_0 and obf_linux_multi_v1_0 is that the multi will call ptrace multiple times in nested loops
 */
 
 use uuid::Uuid;
@@ -31,41 +22,7 @@ use aes::Aes256;
 use block_modes::block_padding::Pkcs7;
 use block_modes::{BlockMode, Cbc};
 
-#[cfg(feature = "obf_v1_0")]
-use goldberg::goldberg_stmts;
-
-#[cfg(any(feature = "obf_linux_v1_0", feature = "obf_linux_multi_v1_0"))]
-#[cfg(target_os = "linux")]
-#[cfg(not(debug_assertions))]
-use debugoff;
-
 type Aes256Cbc = Cbc<Aes256, Pkcs7>;
-
-macro_rules! with_goldberg {
-    ( $body:block ) => {{
-        #[cfg(feature = "obf_v1_0")]
-        let result = goldberg_stmts! { $body };
-
-        #[cfg(not(feature = "obf_v1_0"))]
-        let result = { $body };
-
-        result
-    }};
-}
-
-macro_rules! with_obf_linux {
-    () => {
-        #[cfg(feature = "obf_linux_multi_v1_0")]
-        #[cfg(target_os = "linux")]
-        #[cfg(not(debug_assertions))]
-        debugoff::multi_ptraceme_or_die();
-
-        #[cfg(feature = "obf_linux_v1_0")]
-        #[cfg(target_os = "linux")]
-        #[cfg(not(debug_assertions))]
-        debugoff::ptraceme_or_die();
-    }
-}
 
 /// every function in this struct (accept log) returns a Result and Err("Request was tampered with") will be returned if the request signature doesnt mathc the sha256 hmac of the message
 pub struct KeyauthApi {
@@ -124,7 +81,6 @@ impl KeyauthApi {
 
     /// initializes a session, **required to run before any other function in this struct!!!** accept new
     pub fn init(&mut self, hash: Option<&str>) -> Result<(), String> {
-        with_obf_linux!();
         let init_iv = Self::gen_init_iv();
         self.enckey = Self::gen_init_iv();
 
@@ -144,7 +100,6 @@ impl KeyauthApi {
 
         let resp = Encryption::decrypt(resp, &self.secret, &init_iv);
         let json_rep: serde_json::Value = serde_json::from_str(&resp).unwrap();
-        with_obf_linux!();
         if json_rep["success"].as_bool().unwrap() {
             self.session_id = json_rep["sessionid"].as_str().unwrap().to_string();
             self.num_keys = json_rep["appinfo"]["numKeys"].as_str().unwrap().to_string();
@@ -165,7 +120,6 @@ impl KeyauthApi {
 
     /// registeres a new user
     pub fn register(&mut self, username: String, password: String, license: String, hwid: Option<String>) -> Result<(), String> {
-        with_obf_linux!();
         let init_iv = Self::gen_init_iv();
 
         let hwidd = match hwid {
@@ -188,7 +142,6 @@ impl KeyauthApi {
 
         let resp = Encryption::decrypt(resp, &self.enckey, &init_iv);
         let json_rep: serde_json::Value = serde_json::from_str(&resp).unwrap();
-        with_obf_linux!();
         if json_rep["success"].as_bool().unwrap() {
             self.username = username;
             self.ip = json_rep["info"]["ip"].as_str().unwrap().to_string();
@@ -203,7 +156,6 @@ impl KeyauthApi {
 
     /// upgrades a user license level or extends a license
     pub fn upgrade(&mut self, username: String, license: String) -> Result<(), String> {
-        with_obf_linux!();
         let init_iv = Self::gen_init_iv();
 
         let mut req_data = HashMap::new();
@@ -220,7 +172,6 @@ impl KeyauthApi {
 
         let resp = Encryption::decrypt(resp, &self.enckey, &init_iv);
         let json_rep: serde_json::Value = serde_json::from_str(&resp).unwrap();
-        with_obf_linux!();
         if json_rep["success"].as_bool().unwrap() {
             Ok(())
         } else {
@@ -230,7 +181,6 @@ impl KeyauthApi {
 
     /// login self explanatory
     pub fn login(&mut self, username: String, password: String, hwid: Option<String>) -> Result<(), String> {
-        with_obf_linux!();
         let init_iv = Self::gen_init_iv();
         let hwidd = match hwid {
             Some(hwid) => hwid,
@@ -254,7 +204,6 @@ impl KeyauthApi {
         let resp = Encryption::decrypt(resp, &self.enckey, &init_iv);
         let json_rep: serde_json::Value = serde_json::from_str(&resp).unwrap();
 
-        with_obf_linux!();
         if json_rep["success"].as_bool().unwrap() {
             self.username = username;
             self.ip = json_rep["info"]["ip"].as_str().unwrap().to_string();
@@ -270,7 +219,6 @@ impl KeyauthApi {
 
     /// <https://docs.keyauth.cc/api/license>
     pub fn license(&mut self, license: String, hwid: Option<String>) -> Result<(), String> {
-        with_obf_linux!();
         let init_iv = Self::gen_init_iv();
         let hwidd = match hwid {
             Some(hwid) => hwid,
@@ -292,7 +240,6 @@ impl KeyauthApi {
         let resp = Encryption::decrypt(resp, &self.enckey, &init_iv);
         let json_rep: serde_json::Value = serde_json::from_str(&resp).unwrap();
 
-        with_obf_linux!();
         if json_rep["success"].as_bool().unwrap() {
             self.username = json_rep["info"]["username"].as_str().unwrap().to_string();
             self.ip = json_rep["info"]["ip"].as_str().unwrap().to_string();
@@ -308,7 +255,6 @@ impl KeyauthApi {
 
     /// this will get a global variable (not user) and return it
     pub fn var(&mut self, varid: String) -> Result<String, String> {
-        with_obf_linux!();
         let init_iv = Self::gen_init_iv();
         let mut req_data = HashMap::new();
         req_data.insert("type", encode_lower(b"var"));
@@ -324,7 +270,6 @@ impl KeyauthApi {
         let resp = Encryption::decrypt(resp, &self.enckey, &init_iv);
         let json_rep: serde_json::Value = serde_json::from_str(&resp).unwrap();
 
-        with_obf_linux!();
         if json_rep["success"].as_bool().unwrap() {
             Ok(json_rep["message"].as_str().unwrap().to_string())
         } else {
@@ -334,7 +279,6 @@ impl KeyauthApi {
 
     /// downloads a file, and decodes using base16::decode
     pub fn file(&mut self, fileid: String) -> Result<Vec<u8>, String> {
-        with_obf_linux!();
         let init_iv = Self::gen_init_iv();
         let mut req_data = HashMap::new();
         req_data.insert("type", encode_lower(b"file"));
@@ -350,7 +294,6 @@ impl KeyauthApi {
         let resp = Encryption::decrypt(resp, &self.enckey, &init_iv);
         let json_rep: serde_json::Value = serde_json::from_str(&resp).unwrap();
 
-        with_obf_linux!();
         if json_rep["success"].as_bool().unwrap() {
             Ok(decode(json_rep["contents"].as_str().unwrap()).unwrap())
         } else {
@@ -360,7 +303,6 @@ impl KeyauthApi {
 
     /// sends a webhook from keyauth's servers so the url isnt exposed
     pub fn webhook(&mut self, webid: String, params: String) -> Result<String, String> {
-        with_obf_linux!();
         let init_iv = Self::gen_init_iv();
         let mut req_data = HashMap::new();
         req_data.insert("type", encode_lower(b"webhook"));
@@ -377,7 +319,6 @@ impl KeyauthApi {
         let resp = Encryption::decrypt(resp, &self.enckey, &init_iv);
         let json_rep: serde_json::Value = serde_json::from_str(&resp).unwrap();
 
-        with_obf_linux!();
         if json_rep["success"].as_bool().unwrap() {
             Ok(json_rep["message"].as_str().unwrap().to_string())
         } else {
@@ -387,7 +328,6 @@ impl KeyauthApi {
 
     /// checks if the user is blacklisted and sets self.blacklisted acordingly
     pub fn checkblacklist(&mut self) -> Result<(), String> {
-        with_obf_linux!();
         let init_iv = Self::gen_init_iv();
         let mut req_data = HashMap::new();
         req_data.insert("type", encode_lower(b"checkblacklist"));
@@ -403,7 +343,6 @@ impl KeyauthApi {
         let resp = Encryption::decrypt(resp, &self.enckey, &init_iv);
         let json_rep: serde_json::Value = serde_json::from_str(&resp).unwrap();
 
-        with_obf_linux!();
         if json_rep["success"].as_bool().unwrap() {
             self.blacklisted = true;
             Ok(())
@@ -415,7 +354,6 @@ impl KeyauthApi {
 
     /// checks if the session is still active or if it expired
     pub fn check_session(&mut self) -> Result<bool, String> {
-        with_obf_linux!();
         let init_iv = Self::gen_init_iv();
         let mut req_data = HashMap::new();
         req_data.insert("type", encode_lower(b"check"));
@@ -429,13 +367,11 @@ impl KeyauthApi {
         let resp = Encryption::decrypt(resp, &self.enckey, &init_iv);
         let json_rep: serde_json::Value = serde_json::from_str(&resp).unwrap();
 
-        with_obf_linux!();
         Ok(json_rep["success"].as_bool().unwrap())
     }
 
     /// gets json of online users
     pub fn fetch_online(&mut self) -> Result<serde_json::Value, String> {
-        with_obf_linux!();
         let init_iv = Self::gen_init_iv();
         let mut req_data = HashMap::new();
         req_data.insert("type", encode_lower(b"fetchOnline"));
@@ -450,7 +386,6 @@ impl KeyauthApi {
         let resp = Encryption::decrypt(resp, &self.enckey, &init_iv);
         let json_rep: serde_json::Value = serde_json::from_str(&resp).unwrap();
 
-        with_obf_linux!();
         if json_rep["success"].as_bool().unwrap() {
             Ok(json_rep["users"].clone())
         } else {
@@ -460,7 +395,6 @@ impl KeyauthApi {
 
     /// gets the arry of messages in a channel
     pub fn get_chat(&mut self, channel: String) -> Result<serde_json::Value, String> {
-        with_obf_linux!();
         let init_iv = Self::gen_init_iv();
         let mut req_data = HashMap::new();
         req_data.insert("type", encode_lower(b"chatget"));
@@ -476,7 +410,6 @@ impl KeyauthApi {
         let resp = Encryption::decrypt(resp, &self.enckey, &init_iv);
         let json_rep: serde_json::Value = serde_json::from_str(&resp).unwrap();
 
-        with_obf_linux!();
         if json_rep["success"].as_bool().unwrap() {
             Ok(json_rep["messages"].clone())
         } else {
@@ -486,7 +419,6 @@ impl KeyauthApi {
 
     /// sends a chat message in a channel
     pub fn send_chat_message(&mut self, channel: String, message: String) -> Result<(), String> {
-        with_obf_linux!();
         let init_iv = Self::gen_init_iv();
         let mut req_data = HashMap::new();
         req_data.insert("type", encode_lower(b"chatsend"));
@@ -503,7 +435,6 @@ impl KeyauthApi {
         let resp = Encryption::decrypt(resp, &self.enckey, &init_iv);
         let json_rep: serde_json::Value = serde_json::from_str(&resp).unwrap();
 
-        with_obf_linux!();
         if json_rep["success"].as_bool().unwrap() {
             Ok(())
         } else {
@@ -513,7 +444,6 @@ impl KeyauthApi {
 
     /// self explanatory
     pub fn ban(&mut self) {
-        with_obf_linux!();
         let init_iv = Self::gen_init_iv();
         let mut req_data = HashMap::new();
         req_data.insert("type", encode_lower(b"ban"));
@@ -522,13 +452,11 @@ impl KeyauthApi {
         req_data.insert("ownerid", encode_lower(self.owner_id.as_bytes()));
         req_data.insert("init_iv", init_iv.to_string());
 
-        with_obf_linux!();
         Self::request(req_data, &self.api_url);
     }
 
     /// sets a user variable to varvalue
     pub fn setvar(&mut self, varname: String, varvalue: String) -> Result<(), String> {
-        with_obf_linux!();
         let init_iv = Self::gen_init_iv();
         let mut req_data = HashMap::new();
         req_data.insert("type", encode_lower(b"setvar"));
@@ -547,13 +475,11 @@ impl KeyauthApi {
 
         self.message = json_rep["message"].as_str().unwrap().to_string();
         self.success = json_rep["success"].as_bool().unwrap();
-        with_obf_linux!();
         Ok(())
     }
 
     /// gets a user variable
     pub fn getvar(&mut self, varname: String) -> Result<String, String> {
-        with_obf_linux!();
         let init_iv = Self::gen_init_iv();
         let mut req_data = HashMap::new();
         req_data.insert("type", encode_lower(b"getvar"));
@@ -569,7 +495,6 @@ impl KeyauthApi {
         let resp = Encryption::decrypt(resp, &self.enckey, &init_iv);
         let json_rep: serde_json::Value = serde_json::from_str(&resp).unwrap();
 
-        with_obf_linux!();
         if json_rep["success"].as_bool().unwrap() {
             Ok(json_rep["response"].as_str().unwrap().to_string())
         } else {
@@ -579,7 +504,6 @@ impl KeyauthApi {
 
     /// logs somethink to keyauth
     pub fn log(&mut self, message: String, pcuser: Option<String>) {
-        with_obf_linux!();
         let init_iv = Self::gen_init_iv();
         let usr = match pcuser {
             Some(pcuser) => pcuser,
@@ -595,13 +519,11 @@ impl KeyauthApi {
         req_data.insert("ownerid", encode_lower(self.owner_id.as_bytes()));
         req_data.insert("init_iv", init_iv.to_string());
 
-        with_obf_linux!();
         Self::request(req_data, &self.api_url);
     }
 
     /// changes Username, 
     pub fn change_username(&mut self, new_username: String) -> Result<String, String> {
-        with_obf_linux!();
         let init_iv = Self::gen_init_iv();
         let mut req_data = HashMap::new();
         req_data.insert("type", encode_lower(b"changeUsername"));
@@ -617,7 +539,6 @@ impl KeyauthApi {
         let resp = Encryption::decrypt(resp, &self.enckey, &init_iv);
         let json_rep: serde_json::Value = serde_json::from_str(&resp).unwrap();
 
-        with_obf_linux!();
         if json_rep["success"].as_bool().unwrap() {
             Ok(json_rep["message"].as_str().unwrap().to_string())
         } else {
