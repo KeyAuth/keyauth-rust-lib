@@ -1,6 +1,6 @@
 [package]
 name = "keyauth"
-version = "1.0.41"
+version = "1.2.0"
 edition = "2021"
 description = "keyauth library"
 readme = "README.md"
@@ -18,9 +18,10 @@ machine_uuid = "0.1.0"
 hmac-sha256 = { version = "1.1.4", optional = true}
 hex = "0.4.3"
 base16 = "0.2.1"
-uuid = {version="1.2.1", features=["v4"]}
+uuid = {version="1.2.1", features=["v4"] }
 serde = { version = "1.0.126", features = ["derive"] }
 reqwest = { version = "0.11.12", features = ["blocking"] }
+httparse = { version = "1.8.0", optional = true }
 
 [features]
 default = ["v1_2"]
@@ -28,9 +29,9 @@ v1_0 = ["dep:aes", "dep:block-modes", "dep:sha256"]
 v1_1 = []
 v1_2 = ["dep:hmac-sha256"]
 seller = []
-all = ["v1_0", "v1_1", "v1_2", "seller", "panic"]
+all = ["v1_0", "v1_1", "v1_2", "seller", "panic", "web_loader"]
 panic = []
-wasm = ["uuid/js"]
+web_loader = ["dep:httparse"]
 
 [package.metadata.docs.rs]
 features = ["all"]

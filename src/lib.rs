@@ -31,3 +31,6 @@ pub mod v1_1;
 pub mod v1_2;
 #[cfg(feature = "seller")]
 pub mod seller;
+
+#[cfg(test)]
+mod test;

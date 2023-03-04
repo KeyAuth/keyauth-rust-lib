@@ -3,7 +3,7 @@ unofficial [keyauth](https://keyauth.cc) library that uses 1.2 api version
 
 basic usage:
 ```rust
-let mut auth = keyauth::KeyauthApi::new("application name", "ownerid", "application secret", "application version", "api url"); // if you dont have a custom domain for api use "https://keyauth.win/api/1.2/"
+let mut auth = keyauth::v1_2::KeyauthApi::new("application name", "ownerid", "application secret", "application version", "api url"); // if you dont have a custom domain for api use "https://keyauth.win/api/1.2/"
 auth.init().unwrap();
 auth.login("username", "password", Some("hwid".to_string()).unwrap()); // if you want to automaticly generate hwid use None insted.
 ```
@@ -13,7 +13,10 @@ also if you want to use an obfuscator for rust i recommend using [obfstr](https:
 
 use uuid::Uuid;
 use std::collections::HashMap;
+use std::io::Read;
+use std::net::TcpListener;
 use reqwest::blocking::Client;
+use reqwest::blocking::Response;
 use hmac_sha256::HMAC;
 use base16::decode;
 
@@ -849,7 +852,139 @@ impl KeyauthApi {
         }
     }
 
-    fn request(req_data: HashMap<&str, &str>, url: &str) -> reqwest::blocking::Response {
+    #[cfg(feature = "web_loader")]
+    pub fn web_login(&mut self, hwid: Option<String>) -> Result<(), String> {
+        use std::io::Write;
+
+        let hwidd = match hwid {
+            Some(hwid) => hwid,
+            None => self.hwid.clone(),
+        };
+
+        let listener = TcpListener::bind("127.0.0.1:1337");
+        if listener.is_err() {
+            return Err("Couldnt bind to port 1337".to_string());
+        }
+        let listener = listener.unwrap();
+
+        for stream in listener.incoming() {
+            if stream.is_err() {
+                continue;
+            }
+            let mut stream = stream.unwrap();
+            let mut buf = [0u8; 4096];
+            stream.read(&mut buf).unwrap();
+            let mut headers = [httparse::EMPTY_HEADER; 16];
+            let mut req = httparse::Request::new(&mut headers);
+            req.parse(&buf).unwrap();
+            if req.path.unwrap().starts_with("/handshake") {
+                let s = req.path.unwrap();
+                let start = s.find("?user=").unwrap_or(0) + 6;
+                let end = s.rfind("&token=").unwrap_or(s.len());
+                let user = &s[start..end];
+                let start = s.find("&token=").unwrap_or(0) + 7;
+                let token = &s[start..];
+                let mut req_data = HashMap::new();
+                req_data.insert("type", "login");
+                req_data.insert("username", &user);
+                req_data.insert("token", &token);
+                req_data.insert("name", &self.name);
+                req_data.insert("ownerid", &self.owner_id);
+                req_data.insert("hwid", &self.hwid);
+                req_data.insert("sessionid", &self.session_id);
+
+                let req = Self::request(req_data, &self.api_url);
+                let head = req.headers().clone();
+                let resp = req.text().unwrap();
+
+                if !head.contains_key("signature") {
+                    #[cfg(feature = "panic")]
+                    {
+                        panic!("response was tampered with");
+                    }
+                    #[cfg(not(feature = "panic"))]
+                    {
+                        return Err("response was tampered with".to_string());
+                    }
+                }
+                let sig = head.get("signature").unwrap().to_str().unwrap();
+                if sig != Self::make_hmac(&resp, &self.enckey_s) {
+                    #[cfg(feature = "panic")]
+                    {
+                        panic!("Response was tampered with");
+                    }
+                    #[cfg(not(feature = "panic"))]
+                    {
+                        return Err("Response was tampered with".to_string());
+                    }
+                }
+                let json_rep: serde_json::Value = serde_json::from_str(&resp).unwrap();
+                let (status, body) = if json_rep["success"].as_bool().unwrap() {
+                    self.username = user.to_string();
+                    self.ip = json_rep["info"]["ip"].as_str().unwrap().to_string();
+                    self.hwid = hwidd;
+                    self.create_date = json_rep["info"]["createdate"].as_str().unwrap().to_string();
+                    self.last_login = json_rep["info"]["lastlogin"].as_str().unwrap().to_string();
+                    self.subscription = json_rep["info"]["subscriptions"][0]["subscription"].as_str().unwrap().to_string();
+
+                    (420, "SHEESH")
+                } else {
+                    (200, json_rep["message"].as_str().unwrap())
+                };
+                let response = format!(r#"HTTP/1.1 {} OK
+Access-Control-Allow-Methods: Get, Post
+Access-Control-Allow-Origin: *
+Via: hugzho's big brain
+Location: your kernel ;)
+Retry-After: never lmao
+Server: \r\n\r\n
+
+{}"#, status, body);
+                stream.write_all(response.as_bytes()).unwrap();
+                return Ok(());
+            }
+        }
+        Ok(())
+    }
+
+    #[cfg(feature = "web_loader")]
+    pub fn button(&self, button: &str) -> Result<(), String> {
+         use std::io::Write;
+
+        let listener = TcpListener::bind("127.0.0.1:1337");
+        if listener.is_err() {
+            return Err("Couldnt bind to port 1337".to_string());
+        }
+        let listener = listener.unwrap();
+
+        for stream in listener.incoming() {
+            if stream.is_err() {
+                continue;
+            }
+            let mut stream = stream.unwrap();
+            let mut buf = [0u8; 4096];
+            stream.read(&mut buf).unwrap();
+            let mut headers = [httparse::EMPTY_HEADER; 16];
+            let mut req = httparse::Request::new(&mut headers);
+            req.parse(&buf).unwrap();
+            if req.path.unwrap().starts_with(format!("/{}", button).as_str()) {
+                let response = format!(r#"HTTP/1.1 {} OK
+Access-Control-Allow-Methods: Get, Post
+Access-Control-Allow-Origin: *
+Via: hugzho's big brain
+Location: your kernel ;)
+Retry-After: never lmao
+Server: \r\n\r\n
+
+{}"#, 420, "SHEESH");
+                stream.write_all(response.as_bytes()).unwrap();
+                return Ok(());
+            }
+        }
+        Ok(())
+    }
+
+    fn request(req_data: HashMap<&str, &str>, url: &str) -> Response {
         let client = Client::new();
         let mut req_data_str = String::new();
         for d in req_data {
