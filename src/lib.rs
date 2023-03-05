@@ -23,14 +23,5 @@ also if you want to use an obfuscator for rust i recommend using [obfstr](https:
 if the panic feature is enabled then the v1_2 api will panic insted of returning an error when it detects that the request was tampered with
 */
 
-#[cfg(feature = "v1_0")]
-pub mod v1_0;
-#[cfg(feature = "v1_1")]
-pub mod v1_1;
 #[cfg(feature = "v1_2")]
 pub mod v1_2;
-#[cfg(feature = "seller")]
-pub mod seller;
-
-#[cfg(test)]
-mod test;
