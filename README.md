@@ -1,3 +1,5 @@
+# "pre" obfuscated version using goldberg and ptrace anti debug
+
 # keyauth rust library
 https://docs.rs/keyauth/latest/keyauth/
 
