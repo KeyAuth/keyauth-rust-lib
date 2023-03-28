@@ -40,12 +40,12 @@ impl Default for Res<()> {
     }
 }
 
-impl Res<()> {
-    pub fn inner(self) -> Result<(), String> {
+impl<T> Res<T> {
+    pub fn inner(self) -> Result<T, String> {
         self.0
     }
 
-    pub fn clone_inner(&self) -> Result<(), String> {
+    pub fn clone_inner(&self) -> Result<T, String> {
         self.0.clone()
     }
 

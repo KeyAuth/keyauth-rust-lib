@@ -1,6 +1,6 @@
 [package]
 name = "keyauth-obf"
-version = "1.2.2"
+version = "1.2.2.1"
 edition = "2021"
 description = "keyauth library"
 readme = "README.md"
