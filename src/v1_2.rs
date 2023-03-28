@@ -38,7 +38,9 @@ impl Default for Res<()> {
     fn default() -> Self {
         Res(Err("Default Error".to_string()))
     }
+}
 
+impl Res<()> {
     pub fn inner(self) -> Result<(), String> {
         self.0
     }
@@ -46,6 +48,7 @@ impl Default for Res<()> {
     pub fn clone_inner(&self) -> Result<(), String> {
         self.0.clone()
     }
+
 }
 
 struct Resp {
