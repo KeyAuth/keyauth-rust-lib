@@ -44,11 +44,12 @@ impl<T> Res<T> {
     pub fn inner(self) -> Result<T, String> {
         self.0
     }
+}
 
+impl<T: Clone> Res<T> {
     pub fn clone_inner(&self) -> Result<T, String> {
         self.0.clone()
     }
-
 }
 
 struct Resp {
