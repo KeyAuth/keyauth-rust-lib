@@ -32,11 +32,19 @@ macro_rules! nodebug {
     };
 }
 
-struct Res<T>(Result<T, String>);
+pub struct Res<T>(Result<T, String>);
 
 impl Default for Res<()> {
     fn default() -> Self {
         Res(Err("Default Error".to_string()))
+    }
+
+    pub fn inner(self) -> Result<(), String> {
+        self.0
+    }
+
+    pub fn clone_inner(&self) -> Result<(), String> {
+        self.0.clone()
     }
 }
 
@@ -74,7 +82,7 @@ fn copy_string(bytes: &[u8]) -> String {
 }
 
 /// every function in this struct (accept log) returns a Result and Err("Request was tampered with") will be returned if the request signature doesnt mathc the sha256 hmac of the message
-#[derive(Default)]
+#[derive(Default, Clone)]
 pub struct KeyauthApi {
     name: String,
     owner_id: String,
