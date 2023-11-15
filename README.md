@@ -1,4 +1,4 @@
-# "pre" obfuscated version using goldberg and ptrace anti debug
+# "pre" obfuscated version using goldberg and ptrace anti debug : Please star 🌟
 
 # keyauth rust library
 https://docs.rs/keyauth/latest/keyauth/
